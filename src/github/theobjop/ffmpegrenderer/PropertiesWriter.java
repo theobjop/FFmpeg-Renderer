@@ -13,7 +13,7 @@ public class PropertiesWriter {
 	private static Properties PROP_SINGLETON;
 	
 	// File constant
-	public static final File FILE = new File("opt.ini");
+	public static final File FILE = new File(Renderer.USER_HOME + "\\opt.ini");
 	
 	public static void CreateSingleton() {
 		PROP_SINGLETON = new Properties();

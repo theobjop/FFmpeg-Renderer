@@ -5,24 +5,30 @@ import java.awt.Font;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.font.FontRenderContext;
-import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.SpringLayout;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.plaf.FontUIResource;
 
 public class Renderer implements WindowListener {
+
+	public static final String USER_HOME = System.getProperty("user.home");
 	
+	// Main JFrame and singleton
 	public static Renderer $Renderer;
-	
 	public static JFrame FFMPEGRENDERER;
-	public static Font font;
-	public static FontRenderContext frc;
+
+	// Styling
+	private static FontRenderContext frc;
+	private static FontUIResource fur;
 	
+	// Swing components inside the frame
+	private Console consoleContainer;
 	private Finder finderContainer;
 	private SettingsContainer settingsContainer;
-	private Console console;
 	private Render renderContainer;
 	
 	// Leeched from Romain Hippeau from Stackoverflow.com
@@ -43,50 +49,35 @@ public class Renderer implements WindowListener {
 	}
 	
 	private Renderer() {
+		
 		Renderer.log("Creating main frame.");
 		FFMPEGRENDERER = new JFrame("FFmpeg Renderer");
+		FFMPEGRENDERER.setLayout(null);
+		FFMPEGRENDERER.setSize(new Dimension(457, 530));
 		FFMPEGRENDERER.addWindowListener(this);
 		FFMPEGRENDERER.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		FFMPEGRENDERER.setLayout(null);
-		FFMPEGRENDERER.setSize(new Dimension(448, 512));
 
-		Renderer.appendLog(".. Finished\n... Creating Classic XP Style.");	
+		Renderer.appendLog(".. Finished.\nCreating Style.");
+		fur = new FontUIResource("Arial", Font.PLAIN, 12);
+		frc = new FontRenderContext(fur.getTransform(), true, true);
+		setUIFont(fur);
 		
-		//// Create Styling standards for the entire application
-		font = new Font("Tahoma", Font.PLAIN, 12);
-		AffineTransform affinetransform = new AffineTransform();
-		frc = new FontRenderContext(affinetransform, true, true);
-		
-		// Set UI to look like Windows Classic because Java's GUI is a pain-in-the-ass.
-		try {
-			UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
-			System.out.println("User is not on Windows OS. Some UI elements might be buggy and out of place.");
-		}		
-		setUIFont (new javax.swing.plaf.FontUIResource(font));
-		
-		Renderer.appendLog(".. Finished.\n... Creating Singletons.");
-		
+		Renderer.appendLog(".. Finished.\nCreating Singletons.");
 		//// Get settings after styling because the settings hold the JComponents
 		PropertiesWriter.CreateSingleton();
 		VideoSettings.CreateSingleton();
 		AudioSettings.CreateSingleton();
-		
 
-		Renderer.appendLog(".. Finished.\n... Creating Panels.");
+		Renderer.appendLog(".. Finished.\nCreating Panels.");
 		
-		//// Create the "FFmpeg Location: <text box> [Browse]" GUI
+		//// Create Finder
 		finderContainer = new Finder(PropertiesWriter.get("Exe"), PropertiesWriter.get("Avi"));
 
 		//// Create SettingsContainer
 		settingsContainer = new SettingsContainer();
 		
-		//// Create the Console container		
-		JPanel consoleContainer = new JPanel();
-		consoleContainer.setBounds(0,340,441,116);
-		consoleContainer.setLayout(new BorderLayout());
-		console = new Console();
-		consoleContainer.add(console, BorderLayout.CENTER);
+		//// Create the Console container
+		consoleContainer = new Console();
 		
 		//// Create the Render container...... any more of this shit and I'm going to do something harmful.
 		renderContainer = new Render();
@@ -98,9 +89,21 @@ public class Renderer implements WindowListener {
 		FFMPEGRENDERER.add(renderContainer);
 		
 		FFMPEGRENDERER.setVisible(true);
-
+		
 		Renderer.appendLog(".. Finished!\n");
 		Renderer.log("Frame created.\n");
+	}
+	
+	public static FontRenderContext getFontRenderContext() {
+		return frc;
+	}
+	
+	public static FontUIResource getFontUIResource() {
+		return fur;
+	}
+	
+	public static Rectangle2D getStringBounds(String str) {
+		return fur.getStringBounds(str, frc);
 	}
 	
 	public static Renderer getInstance() {
@@ -119,12 +122,16 @@ public class Renderer implements WindowListener {
 		return $Renderer.finderContainer.getAbsoluteStreamLocation();
 	}
 	
-	public Console getConsole() {
-		return console;
+	public static Console getConsole() {
+		return getInstance().consoleContainer;
 	}
 	
-	public Render getRender() {
-		return renderContainer;
+	public static Render getRender() {
+		return getInstance().renderContainer;
+	}
+	
+	public static Finder getFinder() {
+		return getInstance().finderContainer;
 	}
 	
 	public void destroy() {

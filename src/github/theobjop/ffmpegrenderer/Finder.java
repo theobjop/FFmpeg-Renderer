@@ -1,7 +1,6 @@
 package github.theobjop.ffmpegrenderer;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.geom.Rectangle2D;
 import java.io.File;
 
 import javax.swing.JButton;
@@ -9,6 +8,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.SpringLayout;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -19,7 +19,7 @@ public class Finder extends JPanel implements ActionListener {
 	String exeFromSaveFile, aviFromSaveFile;
 	
 	JTextField exeLocField;
-	JButton exeLocBrowse;
+	public JButton exeLocBrowse;
 	JFileChooser exeOpenFile;
 	
 	JTextField aviLocField;
@@ -27,61 +27,96 @@ public class Finder extends JPanel implements ActionListener {
 	JFileChooser aviOpenFile;
 	
 	public Finder(String exeFromSaveFile, String aviFromSaveFile) {
+		//super(new SpringLayout());
 		//// Create area in which the panel is..
-		this.setLayout(null);
-		this.setBounds(0, 0, 441, 62);
+		this.setBounds(7, 7, 427, 55);
 		
 		// Store for later
 		this.exeFromSaveFile = exeFromSaveFile == null ? "" : exeFromSaveFile;
 		this.aviFromSaveFile = aviFromSaveFile == null ? "" : aviFromSaveFile;
 		
-		// For formatting at the same place
-		Rectangle2D bounds = Renderer.font.getStringBounds("FFmpeg Exe: ", Renderer.frc);
-		
 		//// Executable Location Label, Field, and Browse
 		JLabel exeLocLabel = new JLabel("FFmpeg Exe:");
-		exeLocLabel.setBounds(7, 11, 125, 14);
 		
 		exeLocField = new JTextField();
-		exeLocField.setBounds((int)bounds.getWidth() + 12, 7, 268, 24);
-
+		
 		if (!this.exeFromSaveFile.isEmpty())
 			exeLocField.setText(this.exeFromSaveFile);
 		
 		exeLocBrowse = new JButton("Browse");
-		exeLocBrowse.setBounds(357, 7, 77, 24);
 		
 		exeOpenFile = new JFileChooser();
 		exeOpenFile.addActionListener(this);		
 		exeLocBrowse.addActionListener(this);
-		
-		this.add(exeLocLabel);
-		this.add(exeLocField);
-		this.add(exeLocBrowse);
 		//////////////////////////////////////////////////////////////
 
 		
 		//// AVI Location Label, Field, and Browse
 		JLabel aviLocLabel = new JLabel("Locate AVI:");
-		aviLocLabel.setBounds(7, 40, 125, 14);
 		
 		aviLocField = new JTextField();
-		aviLocField.setBounds((int)bounds.getWidth() + 12, 36, 268, 24);
 		
 		if (!this.aviFromSaveFile.isEmpty())
 			aviLocField.setText(this.aviFromSaveFile);
 
 		aviLocBrowse = new JButton("Browse");
-		aviLocBrowse.setBounds(357, 36, 77, 24);
 
 		aviOpenFile = new JFileChooser();
 		aviOpenFile.addActionListener(this);
 		aviLocBrowse.addActionListener(this);
 		aviOpenFile.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		//////////////////////////////////////////////////////////////
+		
+		
+		//// Finalize styling - Create Layout
+		SpringLayout sl = new SpringLayout();
+		
+		// X Coordinate
+		sl.putConstraint(SpringLayout.WEST, exeLocLabel, 0, SpringLayout.WEST, this);
+		sl.putConstraint(SpringLayout.HORIZONTAL_CENTER, aviLocLabel, 0, SpringLayout.HORIZONTAL_CENTER, exeLocLabel);
+		sl.putConstraint(SpringLayout.VERTICAL_CENTER, aviLocLabel, 0, SpringLayout.VERTICAL_CENTER, aviLocBrowse);
+
+		sl.putConstraint(SpringLayout.VERTICAL_CENTER, exeLocLabel, 0, SpringLayout.VERTICAL_CENTER, exeLocBrowse);
+		
+		sl.putConstraint(SpringLayout.VERTICAL_CENTER, exeLocField, 0, SpringLayout.VERTICAL_CENTER, exeLocBrowse);
+
+		sl.putConstraint(SpringLayout.VERTICAL_CENTER, aviLocField, 0, SpringLayout.VERTICAL_CENTER, aviLocBrowse);
+		sl.putConstraint(SpringLayout.WEST, aviLocField, 0, SpringLayout.WEST, exeLocField);
+		sl.putConstraint(SpringLayout.SOUTH, aviLocField, 0, SpringLayout.SOUTH, aviLocBrowse);
+		sl.putConstraint(SpringLayout.EAST, aviLocField, -4, SpringLayout.WEST, aviLocBrowse);
+		
+		sl.putConstraint(SpringLayout.SOUTH, exeLocField, 0, SpringLayout.SOUTH, exeLocBrowse);
+		
+		sl.putConstraint(SpringLayout.WEST, exeLocField, 5, SpringLayout.EAST, exeLocLabel);
+		
+		sl.putConstraint(SpringLayout.EAST, exeLocField, -4, SpringLayout.WEST, exeLocBrowse);
+		
+		sl.putConstraint(SpringLayout.EAST, exeLocBrowse, 0, SpringLayout.EAST, this);
+		sl.putConstraint(SpringLayout.EAST, aviLocBrowse, 0, SpringLayout.EAST, this);		
+		
+		// Y Coordinate
+		sl.putConstraint(SpringLayout.NORTH, exeLocLabel, 0, SpringLayout.NORTH, this);
+		sl.putConstraint(SpringLayout.NORTH, exeLocField, 0, SpringLayout.NORTH, this);
+		sl.putConstraint(SpringLayout.NORTH, exeLocBrowse, 0, SpringLayout.NORTH, this);
+		
+		sl.putConstraint(SpringLayout.NORTH, aviLocField, 5, SpringLayout.SOUTH, exeLocField);
+		sl.putConstraint(SpringLayout.NORTH, aviLocBrowse, 5, SpringLayout.SOUTH, exeLocBrowse);
+		
+		sl.putConstraint(SpringLayout.SOUTH, aviLocField, 0, SpringLayout.SOUTH, this);
+		sl.putConstraint(SpringLayout.SOUTH, aviLocBrowse, 0, SpringLayout.SOUTH, this);
+		
+		sl.putConstraint(SpringLayout.SOUTH, exeLocField, 0, SpringLayout.SOUTH, exeLocBrowse);
+		sl.putConstraint(SpringLayout.SOUTH, aviLocField, 0, SpringLayout.SOUTH, aviLocBrowse);
+		
+		this.setLayout(sl);
+		
+		this.add(exeLocLabel);
+		this.add(exeLocField);
+		this.add(exeLocBrowse);
+		
 		this.add(aviLocLabel);
 		this.add(aviLocField);
 		this.add(aviLocBrowse);
-		//////////////////////////////////////////////////////////////
 	}
 	
 	@Override

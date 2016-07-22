@@ -33,7 +33,7 @@ public class StreamGobbler extends Thread {
             while ((line = br.readLine()) != null) {
             	if (!cmd) {
             		System.out.println(type + "> " + line);
-                	Renderer.getInstance().getConsole().append(line);
+                	Console.append(line);
             	} else {
             		System.out.println(type + "> " + line);
             		output += line;

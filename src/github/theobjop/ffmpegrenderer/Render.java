@@ -8,6 +8,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.SpringLayout;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apache.commons.io.FilenameUtils;
@@ -21,8 +22,7 @@ public class Render extends JPanel implements ActionListener {
 	int maxFrame;
 	
 	public Render() {
-		this.setLayout(null);
-		this.setBounds(0, 456, 441, 35);
+		this.setBounds(7, 456, 427, 35);
 		
 		renderBtn = new JButton("Render");
 		renderBtn.setBounds(357, 4, 77, 24);
@@ -30,11 +30,22 @@ public class Render extends JPanel implements ActionListener {
 		
 		progBar = new JProgressBar();
 		progBar.setStringPainted(true);
-		progBar.setBounds(7, 4, 346, 24);
+		progBar.setBounds(0, 4, 346, 24);
 		
 		openFile = new JFileChooser("Save");
 		openFile.setDialogType(JFileChooser.SAVE_DIALOG);
 		openFile.setFileFilter(new FileNameExtensionFilter("MP4 Files","mp4"));
+
+		SpringLayout sl = new SpringLayout();
+		sl.putConstraint(SpringLayout.NORTH, renderBtn, 4, SpringLayout.NORTH, this);
+		sl.putConstraint(SpringLayout.NORTH, progBar, 4, SpringLayout.NORTH, this);
+		sl.putConstraint(SpringLayout.SOUTH, progBar, 0, SpringLayout.SOUTH, renderBtn);
+		
+		sl.putConstraint(SpringLayout.WEST, progBar, 0, SpringLayout.WEST, this);
+		sl.putConstraint(SpringLayout.EAST, progBar, -4, SpringLayout.WEST, renderBtn);
+		sl.putConstraint(SpringLayout.EAST, renderBtn, 0, SpringLayout.EAST, this);
+		
+		this.setLayout(sl);
 		
 		this.add(progBar);
 		this.add(renderBtn);

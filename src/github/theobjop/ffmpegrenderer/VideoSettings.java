@@ -1,12 +1,13 @@
 package github.theobjop.ffmpegrenderer;
-import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.SpringLayout;
 
 public class VideoSettings {
 
@@ -21,18 +22,18 @@ public class VideoSettings {
 	public static final String QP_OPT = "-qp";
 	public static final String PRESET_OPT = "-preset";
 	
-	private static JLabel pLbl;
-	private static JLabel vBLbl;
-	private static JLabel fpsLbl;
-	private static JLabel crfLbl;
-	private static JLabel qpLbl;
+	public static JLabel pLbl;
+	public static JLabel vBLbl;
+	public static JLabel fpsLbl;
+	public static JLabel crfLbl;
+	public static JLabel qpLbl;
 	
-	private static JTextField bitrate;
-	private static JTextField framerate;
-	private static JTextField constRateFrame;
-	private static JTextField qpRate;
+	public static JTextField bitrate;
+	public static JTextField framerate;
+	public static JTextField constRateFrame;
+	public static JTextField qpRate;
 	
-	private static PresetSelector presetSelector;
+	public static PresetSelector presetSelector;
 	
 	private static final String CODEC = "libx264";
 	
@@ -41,11 +42,7 @@ public class VideoSettings {
 			SINGLETON = new VideoSettings();
 	}
 	
-	private VideoSettings() {
-		// For formatting
-		Rectangle2D fbR = Renderer.font.getStringBounds("FPS:", Renderer.frc);
-		Rectangle2D comSetSize = Renderer.font.getStringBounds("Audio Kb/s:", Renderer.frc);
-		
+	private VideoSettings() {		
 		// Presets
 		pLbl = new JLabel("Preset: ");
 		presetSelector = new PresetSelector();
@@ -59,19 +56,6 @@ public class VideoSettings {
 		framerate = new JTextField("30");
 		constRateFrame = new JTextField("21");
 		qpRate = new JTextField("0");
-		
-		/// Video TextFields
-		pLbl.setBounds(9+24, 52, (int)comSetSize.getWidth()+2, (int)fbR.getHeight());
-		vBLbl.setBounds(9, 24, (int)comSetSize.getWidth()+2, (int)fbR.getHeight());
-		fpsLbl.setBounds(348+9, 24, (int)fbR.getWidth()+2, (int)fbR.getHeight());
-		crfLbl.setBounds(348+9, 52, (int)fbR.getWidth()+2, (int)fbR.getHeight());
-		qpLbl.setBounds(348+9+4, 81, (int)fbR.getWidth()+2, (int)fbR.getHeight());
-		
-		presetSelector.setBounds((int)comSetSize.getWidth()+15, 49, 100, 24);
-		bitrate.setBounds((int)comSetSize.getWidth()+15, 20, 75, 24);
-		framerate.setBounds(348+15+(int)fbR.getWidth(), 20, (int)fbR.getWidth()+12, 24);
-		constRateFrame.setBounds(348+15+(int)fbR.getWidth(), 49, (int)fbR.getWidth()+12, 24);
-		qpRate.setBounds(348+15+(int)fbR.getWidth(), 78, (int)fbR.getWidth()+12, 24);
 		
 		loadSettings();
 	}
@@ -100,7 +84,7 @@ public class VideoSettings {
 		elementsB(false);
 	}
 	
-	public static void addTo(JPanel parent) {
+	public static void addTo(JPanel parent) {		
 		parent.add(pLbl);
 		parent.add(vBLbl);
 		parent.add(fpsLbl);
@@ -111,6 +95,11 @@ public class VideoSettings {
 		parent.add(constRateFrame);
 		parent.add(presetSelector);
 		parent.add(qpRate);
+	}
+	
+	public static JComponent[] getComponenets() {
+		JComponent[] ret = { pLbl, vBLbl, fpsLbl, crfLbl, qpLbl, bitrate, framerate, constRateFrame, presetSelector, qpRate };
+		return ret;
 	}
 	
 	public static String getCodec() {

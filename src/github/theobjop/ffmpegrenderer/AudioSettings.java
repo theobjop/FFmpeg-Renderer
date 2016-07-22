@@ -1,5 +1,4 @@
 package github.theobjop.ffmpegrenderer;
-import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,11 +16,11 @@ public class AudioSettings {
 	private static final String A_BIT_OPT = "-b:a";
 	private static final String A_FREQ_OPT = "-ar";	
 	
-	private static JLabel aFLbl;
-	private static JLabel aBLbl;
+	public static JLabel aFLbl;
+	public static JLabel aBLbl;
 	
-	private static JTextField frequency;
-	private static JTextField bitrate;	
+	public static JTextField frequency;
+	public static JTextField bitrate;	
 	
 	private static final String CODEC = "aac";
 	
@@ -32,7 +31,8 @@ public class AudioSettings {
 	
 	private AudioSettings() {
 		// For formatting
-		Rectangle2D comSetSize = Renderer.font.getStringBounds("Audio Kb/s:", Renderer.frc);
+		int akbWidth = (int)Renderer.getStringBounds("Audio Kb/s:").getWidth();
+		int fontHeight = (int)Renderer.getStringBounds("Audio Kb/s:").getHeight();
 		
 		//// Audio Labels
 		aFLbl = new JLabel("Audio Hz:");
@@ -41,10 +41,10 @@ public class AudioSettings {
 		bitrate = new JTextField("192");
 
 		/// Audio TextFields
-		aFLbl.setBounds(20, 232-6-4, (int)comSetSize.getWidth()+2, (int)comSetSize.getHeight());
-		aBLbl.setBounds(9, 254-4, (int)comSetSize.getWidth()+2, (int)comSetSize.getHeight());
-		frequency.setBounds((int)comSetSize.getWidth()+15, 218, 75, 24);
-		bitrate.setBounds((int)comSetSize.getWidth()+15, 246, 75, 24);
+		aFLbl.setBounds(20, 232-6-4, akbWidth+2, fontHeight);
+		aBLbl.setBounds(9, 254-4, akbWidth+2, fontHeight);
+		frequency.setBounds(akbWidth+15, 218, 75, 24);
+		bitrate.setBounds(akbWidth+15, 246, 75, 24);
 	}
 	
 	public static void loadSettings() {
