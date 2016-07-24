@@ -7,18 +7,18 @@ import java.io.InputStreamReader;
 import javax.swing.JProgressBar;
 
 public class ProgressGobbler extends StreamGobbler {
-	
+
 	InputStream is;
 	String type;
 	JProgressBar progBar;
-	
+
 	public ProgressGobbler(InputStream is, String type, JProgressBar progBar) {
 		super(is, type);
 		this.is = is;
 		this.type = type;
 		this.progBar = progBar;
 	}
-	
+
 	@Override
     public void run() {
 		try {
@@ -27,14 +27,14 @@ public class ProgressGobbler extends StreamGobbler {
             String line = null;
             while ((line = br.readLine()) != null) {
         		System.out.println(type + "> " + line);
-            	Renderer.getInstance().getConsole().append(line);
+            	Renderer.getConsole().append(line);
             	Render.progress(getFrameNum(line), getFPSProgress(line));
             }
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
     }
-	
+
 	public int getFrameNum(String line) {
 		String[] split = line.split(" +");
 		for (int i = 0; i < split.length; i++) {
@@ -44,7 +44,7 @@ public class ProgressGobbler extends StreamGobbler {
 		}
 		return 0;
 	}
-	
+
 	public int getFPSProgress(String line) {
 		String[] split = line.split(" +");
 		for (int i = 0; i < split.length; i++) {
