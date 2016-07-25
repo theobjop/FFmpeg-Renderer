@@ -1,71 +1,74 @@
 package github.theobjop.ffmpegrenderer;
-import java.io.IOException;
 
-import javax.swing.JProgressBar;
-import javax.swing.SwingWorker;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.lang.ProcessBuilder.Redirect;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
 
 import org.apache.commons.io.FilenameUtils;
 
-public class FrameRetriever extends SwingWorker<String, Object> {
+public class FrameRetriever extends Thread {
+	
+	File sharedFile = new File(Renderer.USER_HOME, ".frames");
+	
+	StreamCallback cb;
 	ProcessBuilder processBuilder;
-	String finalOutput;
+	Process p;
 	
-	JProgressBar progBar;
-	String fps;
-	
-	RenderProcess proc;
-	
-	public FrameRetriever(RenderProcess proc, JProgressBar progBar, String fps, String exe, String avs) {
-		this.proc = proc;
-		this.progBar = progBar;
-		this.fps = fps;
-		exe = FilenameUtils.getFullPath(exe) + "ffprobe.exe";
+	public FrameRetriever(StreamCallback cb, String avs) throws Exception {
+		Console.write("New FrameRetriever: " + cb.toString() + ", " + avs);
+		this.cb = cb;
+		String exe;
+		try {
+			exe = Renderer.getLocation();
+			exe = FilenameUtils.getFullPath(exe) + "ffprobe.exe";
 		
-		String[] cmd_arg = {
-				exe,
-				"-v", "error",
-				"-show_entries", "format=duration",
-				"-of", "default=noprint_wrappers=1:nokey=1",
-				avs
-		};
-		
-		processBuilder = new ProcessBuilder(cmd_arg);
+			String[] cmd_arg = {
+					exe,
+					"-v", "error",
+					"-show_entries", "format=duration",
+					"-of", "default=noprint_wrappers=1:nokey=1",
+					avs
+			};
+			
+			processBuilder = new ProcessBuilder(cmd_arg);
+			processBuilder.redirectErrorStream(true);
+			processBuilder.redirectOutput(Redirect.to(sharedFile));
+		} catch (Exception e) {
+			throw new Exception(e.getCause().toString());
+		}
 	}
 
 	@Override
-	protected String doInBackground() throws Exception {
+	public void run() {
 		try {
-			Process p = processBuilder.start();
-			
-			StreamGobbler messageCollector = new StreamGobbler(p.getInputStream(), "ERROR", true);
-			messageCollector.start();
-			
+			p = processBuilder.start();
 			p.waitFor();
-			finalOutput = messageCollector.getOutput();
-		} catch (IOException e) {
-			progBar.setString("Failed... skipping");
-			throw new Exception("Could not find ffprobe.exe");
+		} catch (IOException | InterruptedException e) {
+			throw new RuntimeException("Unable to start Process thread or create StreamGobbler.");
 		}
 		
-		return finalOutput;
+		cb.callback("frameComplete", "");
 	}
 	
-	@Override
-	protected void done() {
-		if (finalOutput != null) {
-			if (finalOutput.isEmpty()) {
-				try {
-					float f = Float.parseFloat(fps);
-					float max = Float.parseFloat(finalOutput);
-					System.out.println("MAX: " + max);
-					progBar.setMaximum( (int)(f * max) );
-					System.out.println("Frames: " + (int)(f*max));		
-					progBar.setString( String.valueOf(progBar.getPercentComplete()*100) + "%" );
-				} catch (Exception e) {
-					progBar.setString("ERROR: " + e.getMessage());
-				}
-			}
+	public String getOutput() throws Exception {
+		try {
+			// Lots of conversions
+			/// Gets path to tempFile
+			/// Reads all the lines into list
+			/// Converts list to single string (It's only one line long...)
+			if (sharedFile.exists()) {
+				String ret = Arrays.toString(Files.readAllLines(Paths.get(sharedFile.toURI())).toArray());
+				sharedFile.delete();
+				return ret;
+			} return null;
+		} catch (FileNotFoundException e) {
+			throw e;
 		}
-		proc.start();
 	}
 }

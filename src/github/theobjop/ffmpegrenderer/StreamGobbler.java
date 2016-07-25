@@ -3,48 +3,54 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.UUID;
 
 public class StreamGobbler extends Thread {
-     
-	InputStream is;
-	String type;
+    
+	StreamCallback cb;
+	InputStream[] is;
+	String uniqueID;
 	
 	boolean cmd = false;
 	
-	String output = "";
-	
-    public StreamGobbler(InputStream is, String type) {
+	public StreamGobbler(InputStream... is) {
     	this.is = is;
-    	this.type = type;
+    	this.uniqueID = UUID.randomUUID().toString();
+    }
+	
+    public StreamGobbler(String uniqueId, StreamCallback cb, InputStream... is) {
+    	this.uniqueID = uniqueId;
+    	this.cb = cb;
+    	this.is = is;
     }
     
-    public StreamGobbler(InputStream is, String type, boolean cmd) {
+    public StreamGobbler(StreamCallback cb, InputStream... is) {
+    	this.uniqueID = UUID.randomUUID().toString();
+    	this.cb = cb;
     	this.is = is;
-    	this.type = type;
-    	this.cmd = cmd;
     }
     
     @Override
     public void run() {
-        try {
-            InputStreamReader isr = new InputStreamReader(is);
-            BufferedReader br = new BufferedReader(isr);
-            String line = null;
-            while ((line = br.readLine()) != null) {
-            	if (!cmd) {
-            		System.out.println(type + "> " + line);
-                	Console.append(line);
-            	} else {
-            		System.out.println(type + "> " + line);
-            		output += line;
-            	}
-            }
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
-    }
-    
-    public String getOutput() {
-    	return output;
+    	// Create a new InputStream for all of the provided input streams.
+    	// It usually only contains Error and Output streams, moreso singally one or the other.
+    	for (InputStream in : is) {
+    		new Thread(new Runnable() {
+    			@Override
+    			public void run() {
+    				try {
+	    				BufferedReader br = new BufferedReader(new InputStreamReader(in));
+	    				String line = null;
+	    	            while ((line = br.readLine()) != null) {
+	    	        		System.out.println("> " + line);
+	    	            	Console.append(line);
+	    	        		cb.callback(uniqueID, line);
+	    	            }
+    				} catch (IOException e) {
+    					Console.error(e);
+    				}
+    			}
+    		}).start();
+    	}
     }
 }

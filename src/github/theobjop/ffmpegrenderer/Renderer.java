@@ -1,5 +1,4 @@
 package github.theobjop.ffmpegrenderer;
-import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.WindowEvent;
@@ -8,8 +7,6 @@ import java.awt.font.FontRenderContext;
 import java.awt.geom.Rectangle2D;
 
 import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.SpringLayout;
 import javax.swing.UIManager;
 import javax.swing.plaf.FontUIResource;
 
@@ -136,12 +133,7 @@ public class Renderer implements WindowListener {
 	
 	public void destroy() {
 		AvsWriter.deleteFile();
-		
-		if (RenderProcess.process != null) {
-			if (RenderProcess.process.isAlive())
-				RenderProcess.process.destroyForcibly();
-		}
-		
+		renderContainer.stopProcesses();
 		PropertiesWriter.save();
 	}
 	

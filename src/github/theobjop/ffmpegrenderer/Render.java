@@ -2,35 +2,49 @@ package github.theobjop.ffmpegrenderer;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
+import java.util.UUID;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.SpringLayout;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 @SuppressWarnings("serial")
-public class Render extends JPanel implements ActionListener {
+public class Render extends JPanel implements ActionListener, StreamCallback, UncaughtExceptionHandler {
+	
+	private static final String IN_OPT = "-i";
+	
+	String uniqueID;
 	
 	JButton renderBtn;
 	JFileChooser openFile;
-	JProgressBar progBar;
+	ProgressStream progStream;
 	int maxFrame;
+	FrameRetriever fr;
+	RenderProcess rp;
+	
+	ProcessBuilder pb;
+	String inloc, exeloc, outloc;
 	
 	public Render() {
 		this.setBounds(7, 456, 427, 35);
+		
+		uniqueID = UUID.randomUUID().toString();
 		
 		renderBtn = new JButton("Render");
 		renderBtn.setBounds(357, 4, 77, 24);
 		renderBtn.addActionListener(this);
 		
-		progBar = new JProgressBar();
-		progBar.setStringPainted(true);
-		progBar.setBounds(0, 4, 346, 24);
+		progStream = new ProgressStream();
+		progStream.setStringPainted(true);
+		progStream.setBounds(0, 4, 346, 24);
 		
 		openFile = new JFileChooser("Save");
 		openFile.setDialogType(JFileChooser.SAVE_DIALOG);
@@ -38,16 +52,16 @@ public class Render extends JPanel implements ActionListener {
 
 		SpringLayout sl = new SpringLayout();
 		sl.putConstraint(SpringLayout.NORTH, renderBtn, 4, SpringLayout.NORTH, this);
-		sl.putConstraint(SpringLayout.NORTH, progBar, 4, SpringLayout.NORTH, this);
-		sl.putConstraint(SpringLayout.SOUTH, progBar, 0, SpringLayout.SOUTH, renderBtn);
+		sl.putConstraint(SpringLayout.NORTH, progStream, 4, SpringLayout.NORTH, this);
+		sl.putConstraint(SpringLayout.SOUTH, progStream, 0, SpringLayout.SOUTH, renderBtn);
 		
-		sl.putConstraint(SpringLayout.WEST, progBar, 0, SpringLayout.WEST, this);
-		sl.putConstraint(SpringLayout.EAST, progBar, -4, SpringLayout.WEST, renderBtn);
+		sl.putConstraint(SpringLayout.WEST, progStream, 0, SpringLayout.WEST, this);
+		sl.putConstraint(SpringLayout.EAST, progStream, -4, SpringLayout.WEST, renderBtn);
 		sl.putConstraint(SpringLayout.EAST, renderBtn, 0, SpringLayout.EAST, this);
 		
 		this.setLayout(sl);
 		
-		this.add(progBar);
+		this.add(progStream);
 		this.add(renderBtn);
 	}
 	
@@ -59,24 +73,59 @@ public class Render extends JPanel implements ActionListener {
 		// Attempt to create process with all the settings, if error then don't continue.
 		try {
 			//// Get all locations
-			String exeloc = Renderer.getLocation();
-			String inloc = AvsWriter.CreateAVS(Renderer.getStreamFile()).getAbsolutePath();
-			String outloc = fileName;
+			exeloc = Renderer.getLocation();
+			inloc = AvsWriter.CreateAVS(Renderer.getStreamFile()).getAbsolutePath();
+			outloc = fileName;
 			///////////////////////////////////////////////////////////////
-
-			//// Threads for Processes, one for frameCount, one for the Encoder
-			RenderProcess proc = new RenderProcess(exeloc, inloc, outloc);
-			FrameRetriever fr = new FrameRetriever(proc, progBar, VideoSettings.getFPS(), exeloc, inloc);
-			///////////////////////////////////////////////////////////////			
 			
-			fr.execute();
+			//// Build Process
+			String[] exe_input = { exeloc, IN_OPT, inloc, "-y" };
+			String[] vid = VideoSettings.getRenderSettings();		
+			String[] def = DefaultSettings.getSettings(VideoSettings.getFPS());
+			String[] aud = AudioSettings.getRenderSettings();
+			String[] output = { outloc };
 			
-			progBar.setMinimum(0);
-			renderBtn.setEnabled(false);
-			SettingsContainer.disableElements();
+			String[] CMD_ARRAY;
+			CMD_ARRAY = (String[])ArrayUtils.addAll(exe_input, vid);
+			CMD_ARRAY = (String[])ArrayUtils.addAll(CMD_ARRAY, def);
+			CMD_ARRAY = (String[])ArrayUtils.addAll(CMD_ARRAY, aud);
+			CMD_ARRAY = (String[])ArrayUtils.addAll(CMD_ARRAY, output);
+			
+			pb = new ProcessBuilder(CMD_ARRAY);
+			
+			// Start the frame retriever
+			// When it completes, the renderer will run. This is so the progress bar works.
+			progStream.setString("Calculating how long video is...");
+			fr = new FrameRetriever(this, inloc);
+			fr.start();
 		} catch (Exception err) {
 			JOptionPane.showMessageDialog(Renderer.FFMPEGRENDERER, err.getMessage(), "Error.", JOptionPane.ERROR_MESSAGE);
 		}
+	}
+	
+	// FrameRetriever has completed
+	// Now we start the renderer
+	@Override
+	public void callback(String uid, Object o) {
+		if (uid == "frameComplete") {
+			try {
+				// We'll pass it to the progStream too along with the FrameRetriever object so it can do what it needs to.
+				progStream.callback("frameComplete", fr);
+				
+				//// Run the Renderer
+				renderBtn.setEnabled(false);
+				SettingsContainer.disableElements();
+				rp = new RenderProcess(pb, progStream);
+				rp.start();
+				System.out.println("This is a test");
+			} catch (Exception err) {
+				JOptionPane.showMessageDialog(Renderer.FFMPEGRENDERER, err.getMessage(), "Error.", JOptionPane.ERROR_MESSAGE);
+			}
+		}
+	}
+	
+	public void stopProcesses() {
+		rp.kill();
 	}
 	
 	@Override
@@ -94,43 +143,40 @@ public class Render extends JPanel implements ActionListener {
 				} else {
 					execute(fileName);
 				}
-				
-				Render.reset();
 			} catch (Exception e1) {
 				JOptionPane.showMessageDialog(Renderer.FFMPEGRENDERER, e1.getMessage());
 			}
 		}
 	}
-	
-	public static void reset() {
-		Renderer.getInstance().getRender().renderBtn.setEnabled(true);
-		Renderer.getInstance().getRender().progBar.setValue(0);
-		Renderer.getInstance().getRender().progBar.setMinimum(0);
-		Renderer.getInstance().getRender().progBar.setMaximum(0);
-		Renderer.getInstance().getRender().progBar.setString("0%");
+
+
+	@Override
+	public void uncaughtException(Thread t, Throwable e) { }
+}
+
+class RenderProcess extends Thread {
+	ProcessBuilder pb;
+	StreamCallback cb;
+	Process process;
+	public RenderProcess(ProcessBuilder pb, StreamCallback cb) {
+		this.pb = pb;
+		this.cb = cb;
 	}
 	
-	public static void progress(int frame, int fps) {
-		if (frame >= Renderer.getInstance().getRender().progBar.getMaximum()) {
-			Renderer.getInstance().getRender().progBar.setString("DONE!");
-			Renderer.FFMPEGRENDERER.setTitle("FFmpeg Renderer");
-			Renderer.getInstance().getRender().renderBtn.setEnabled(true);
-			SettingsContainer.enableElements();
-			return;
-		}
-		Renderer.getInstance().getRender().progBar.setString(String.format("%.2f", Renderer.getInstance().getRender().progBar.getPercentComplete()*100) + "%");
-		Renderer.getInstance().getRender().progBar.setValue(frame);
-		Renderer.FFMPEGRENDERER.setTitle("FFmpeg Renderer - Estimated Time: " + timeConversion(fps));
+	public void kill() {
+		process.destroyForcibly();
 	}
 	
-	private static String timeConversion(int fps) {
-		if (fps == 0)
-			return "";
-		int totalSeconds = (Renderer.getInstance().getRender().progBar.getMaximum() - Renderer.getInstance().getRender().progBar.getValue()) / fps;
-	    int seconds = totalSeconds % 60;
-	    int totalMinutes = totalSeconds / 60;
-	    int minutes = totalMinutes % 60;
-	    int hours = totalMinutes / 60;
-	    return (hours > 0 ? hours + " hours " : "") + (minutes > 0 || totalSeconds > 60 ? minutes + " minutes, " : "") + seconds + " seconds";
+	@Override
+	public void run() {
+		try {
+			process = pb.start();
+			
+			// Create StreamGobbler to read the Process, use ProgressStream (JProgressBar) as a callback for the read.
+			StreamGobbler streamGobbler = new StreamGobbler(cb, process.getErrorStream(), process.getInputStream());
+			streamGobbler.start();
+		} catch (IOException e1) {
+			JOptionPane.showMessageDialog(Renderer.FFMPEGRENDERER, "Invalid FFmpeg.exe location.", "Error.", JOptionPane.ERROR_MESSAGE);
+		}		
 	}
 }

@@ -26,10 +26,16 @@ public class Console extends JPanel {
 	}
 	
 	public static void append(String str) {
+		Renderer.log(str + "\n");
 		Renderer.getConsole()._console.print(str + "\n");
 	}
 	
 	public static void write(String str) {
+		Renderer.log(str + "\n");
 		Renderer.getConsole()._console.println(str);
+	}
+	
+	public static void error(Exception e) {
+		Renderer.getConsole()._console.println("Error (" + e.getCause().toString() + "): " + e.getMessage());
 	}
 }
