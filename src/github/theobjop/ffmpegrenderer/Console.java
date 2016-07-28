@@ -25,10 +25,6 @@ public class Console extends JPanel {
 		this.add(_console);
 	}
 	
-	public static void append(String str) {
-		Renderer.getConsole()._console.print(str + "\n");
-	}
-	
 	public static void write(String str) {
 		Renderer.getConsole()._console.println(str);
 	}

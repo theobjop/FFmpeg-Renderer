@@ -2,6 +2,7 @@ package github.theobjop.ffmpegrenderer;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.Arrays;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -26,17 +27,21 @@ public class Finder extends JPanel implements ActionListener {
 	JButton aviLocBrowse;
 	JFileChooser aviOpenFile;
 	
-	public Finder(String exeFromSaveFile, String aviFromSaveFile) {
+	public Finder() {
 		//super(new SpringLayout());
 		//// Create area in which the panel is..
 		this.setBounds(7, 7, 427, 55);
 		
+		PropertiesWriter.loadLocations();
+		
 		// Store for later
-		this.exeFromSaveFile = exeFromSaveFile == null ? "" : exeFromSaveFile;
-		this.aviFromSaveFile = aviFromSaveFile == null ? "" : aviFromSaveFile;
+		String sE = PropertiesWriter.getExeLocation();
+		String sA = PropertiesWriter.getAviLocation();
+		this.exeFromSaveFile = sE == null ? "" : sE;
+		this.aviFromSaveFile = sA == null ? "" : sA;
 		
 		//// Executable Location Label, Field, and Browse
-		JLabel exeLocLabel = new JLabel("FFmpeg Exe:");
+		JLabel exeLocLabel = new JLabel("FFmpeg Loc:");
 		
 		exeLocField = new JTextField();
 		
@@ -46,6 +51,7 @@ public class Finder extends JPanel implements ActionListener {
 		exeLocBrowse = new JButton("Browse");
 		
 		exeOpenFile = new JFileChooser();
+		exeOpenFile.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		exeOpenFile.addActionListener(this);		
 		exeLocBrowse.addActionListener(this);
 		//////////////////////////////////////////////////////////////
@@ -73,7 +79,7 @@ public class Finder extends JPanel implements ActionListener {
 		
 		// X Coordinate
 		sl.putConstraint(SpringLayout.WEST, exeLocLabel, 0, SpringLayout.WEST, this);
-		sl.putConstraint(SpringLayout.HORIZONTAL_CENTER, aviLocLabel, 0, SpringLayout.HORIZONTAL_CENTER, exeLocLabel);
+		sl.putConstraint(SpringLayout.EAST, aviLocLabel, 0, SpringLayout.EAST, exeLocLabel);
 		sl.putConstraint(SpringLayout.VERTICAL_CENTER, aviLocLabel, 0, SpringLayout.VERTICAL_CENTER, aviLocBrowse);
 
 		sl.putConstraint(SpringLayout.VERTICAL_CENTER, exeLocLabel, 0, SpringLayout.VERTICAL_CENTER, exeLocBrowse);
@@ -142,10 +148,17 @@ public class Finder extends JPanel implements ActionListener {
 	public String getLoc() throws Exception {
 		if (exeLocField.getText().isEmpty())
 			throw new Exception("FFmpeg location not set.");
-		if (!FilenameUtils.getName(exeLocField.getText()).equalsIgnoreCase("ffmpeg.exe"))
-			throw new Exception("Invalid FFmpeg file.");
 		
-		return exeLocField.getText();
+		File f = new File(exeLocField.getText());
+		if (f.isDirectory())
+			for (String s : f.list())
+				if (s.equalsIgnoreCase("ffmpeg.exe"))
+					return exeLocField.getText();
+		
+		if (f.isFile() && f.getName().equalsIgnoreCase("ffmpeg.exe"))
+			return exeLocField.getText();
+		
+		throw new Exception("Invalid FFmpeg file or location.");
 	}
 	
 	public String getStreamFile() throws Exception {
