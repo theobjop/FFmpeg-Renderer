@@ -70,6 +70,7 @@ public class Renderer implements WindowListener {
 	
 	private Renderer() {
 		FFMPEGRENDERER = new JFrame("FFmpeg Renderer");
+		FFMPEGRENDERER.setResizable(false);
 		FFMPEGRENDERER.setLayout(null);
 		FFMPEGRENDERER.setSize(new Dimension(457, 530));
 		FFMPEGRENDERER.addWindowListener(this);
